@@ -1,0 +1,40 @@
+# Rust build artifacts
+/target/
+**/target/
+Cargo.lock
+
+# Debug files
+*.pdb
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Benchmark and profiling output
+criterion/
+perf.data*
+flamegraph.svg
+*.profdata
+
+# Documentation
+/doc/
+
+# Local configuration
+.env
+.env.local
+
+# Test outputs
+test_results/
+*.log

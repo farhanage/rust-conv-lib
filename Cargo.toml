@@ -1,0 +1,35 @@
+# Cargo.toml
+[package]
+name = "rust_conv_lib"
+version = "0.1.0"
+edition = "2021"
+authors = ["Farhan Akhtar Gymnasiar"]
+
+[lib]
+name = "rust_conv_lib"
+crate-type = ["rlib", "cdylib"]
+
+[features]
+default = []
+blas = ["blas-src"]
+openblas = ["openblas-src"]
+cuda = ["cudarc"]
+
+[dependencies]
+ndarray = { version = "0.16.1", features = ["blas"] }
+ndarray-linalg = { version = "0.17", features = ["openblas-system"] }
+blas-src = { version = "0.12.1", optional = true, features = ["openblas"] }
+openblas-src = { version = "0.10", optional = true, features = ["system"] }
+rayon = "1.7"
+rustfft = "6.0"
+num-complex = "0.4"
+libc = "0.2"
+cfg-if = "1.0"
+cudarc = { version = "0.13", optional = true, features = ["cublas", "cuda-version-from-build-system"] }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "criterion_bench"
+harness = false

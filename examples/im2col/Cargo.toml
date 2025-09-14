@@ -1,0 +1,8 @@
+[package]
+name = "im2col"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rust_conv_lib = { path = "/mnt/d/code/komp_intel/tugas_3/rust_conv_lib" }
+ndarray = "0.16.1"
