@@ -3,7 +3,7 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use ndarray::Array2;
-use rust_conv_lib::{im2col_single, gemm, conv2d_fft, winograd_conv_2d_3x3};
+use rust_conv_lib::{im2col_single, gemm, conv2d_fft, winograd_conv_2d_3x3, naive_conv_2d};
 
 /// Test configuration for different convolution scenarios
 #[derive(Debug, Clone)]
@@ -47,30 +47,6 @@ impl ConvConfig {
             ConvConfig::new("7x7 kernel", 3, 256, 256, 64, 7),
         ]
     }
-}
-
-/// Naive direct convolution implementation (single channel)
-fn naive_conv_2d(input: &Array2<f32>, kernel: &Array2<f32>) -> Array2<f32> {
-    let (in_h, in_w) = input.dim();
-    let (k_h, k_w) = kernel.dim();
-    let out_h = in_h - k_h + 1;
-    let out_w = in_w - k_w + 1;
-    
-    let mut output = Array2::zeros((out_h, out_w));
-    
-    for oh in 0..out_h {
-        for ow in 0..out_w {
-            let mut sum = 0.0;
-            for kh in 0..k_h {
-                for kw in 0..k_w {
-                    sum += input[[oh + kh, ow + kw]] * kernel[[kh, kw]];
-                }
-            }
-            output[[oh, ow]] = sum;
-        }
-    }
-    
-    output
 }
 
 /// im2col + GEMM convolution implementation (single channel)

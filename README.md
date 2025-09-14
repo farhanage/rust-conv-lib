@@ -25,24 +25,28 @@ A high-performance Rust library implementing multiple convolution algorithms for
 
 ```rust
 use rust_conv_lib::*;
-use ndarray::Array;
+use ndarray::Array2;
 
-// Create input and kernel
-let input = Array::from_shape_vec((1, 32, 32), vec![1.0; 1024]).unwrap();
-let kernel = Array::from_shape_vec((1, 1, 3, 3), vec![1.0; 9]).unwrap();
+// Create 2D input and kernel
+let input = Array2::from_elem((32, 32), 1.0);
+let kernel = Array2::from_elem((3, 3), 0.1);
 
-// Different convolution methods
-let conv_naive = NaiveConv;
-let result1 = conv_naive.conv(&input.view(), &kernel.view(), (1, 1), (0, 0));
+// Naive direct convolution
+let result_naive = naive_conv_2d(&input, &kernel);
 
-let conv_gemm = Im2colGemmConv;
-let result2 = conv_gemm.conv(&input.view(), &kernel.view(), (1, 1), (0, 0));
+// FFT-based convolution
+let result_fft = conv2d_fft(&input, &kernel);
 
-let conv_fft = FftConv;
-let result3 = conv_fft.conv(&input.view(), &kernel.view(), (1, 1), (0, 0));
+// Winograd convolution (3x3 kernels only)
+let result_winograd = winograd_conv_2d_3x3(&input, &kernel);
 
-let conv_winograd = WinogradConv;
-let result4 = conv_winograd.conv(&input.view(), &kernel.view(), (1, 1), (0, 0));
+// Using the NaiveConv struct
+let conv = NaiveConv::new();
+let result_struct = conv.conv_2d(&input, &kernel);
+
+// For im2col + GEMM convolution, use the functions directly:
+// You need to use im2col_single and gemm functions manually
+// (see examples/quick_bench.rs for complete implementation)
 ```
 
 ### 3D Convolution Example
@@ -51,8 +55,10 @@ let result4 = conv_winograd.conv(&input.view(), &kernel.view(), (1, 1), (0, 0));
 use rust_conv_lib::conv3d::*;
 use ndarray::Array;
 
-// Create 3D input and kernel
+// Create 3D input (1 channel, 16x16x16 volume)
 let input = Array::from_shape_vec((1, 16, 16, 16), vec![1.0; 4096]).unwrap();
+
+// Create 3D kernel (1 output channel, 1 input channel, 3x3x3 kernel)
 let kernel = create_3d_kernel(&vec![1.0; 27], 1, 1, 3, 3, 3);
 
 // Different 3D convolution methods
@@ -69,10 +75,17 @@ let result2 = conv_gemm.conv3d(&input.view(), &kernel.view(), (3, 3, 3), (1, 1, 
 
 | Input Size | Naive | Im2col+GEMM | FFT | Winograd |
 |------------|-------|-------------|-----|----------|
-| 32x32      | 0.12ms | 0.31ms | 0.89ms | 0.08ms |
-| 64x64      | 0.48ms | 1.02ms | 1.47ms | 0.32ms |
-| 128x128    | 1.96ms | 3.45ms | 3.21ms | 1.24ms |
-| 256x256    | 7.82ms | 12.8ms | 9.54ms | 4.89ms |
+| 32x32      | 7.965 $\mu\text{s}$ | 23.038 $\mu\text{s}$ | 42.131 $\mu\text{s}$ | 9.1619 $\mu\text{s}$ |
+| 128x128    | 137.19 $\mu\text{s}$ | 412.02 $\mu\text{s}$ | 964.61 $\mu\text{s}$ | 167.87 $\mu\text{s}$ |
+| 256x256    | 553.92 $\mu\text{s}$ | 1.7373 ms | 9.54ms | 681.25 $\mu\text{s}$ |
+
+### 2D Convolution on Different Kernel Sizes (256x256 input)
+
+| Kernel Size | Im2col+GEMM | FFT |
+|------------|-------------|-----|
+| 3x3      | 1.7599 ms | 9.4502 ms |
+| 5x5    | 4.2700 ms | 9.4730 ms |  
+| 7x7    | 8.8399 ms | 9.4827 ms | 
 
 ### 3D Convolution Benchmarks (3x3x3 kernel)
 
@@ -94,8 +107,10 @@ cargo build --release
 cargo test
 
 # Run benchmarks
-cargo run --example imagenet_bench
-cargo run --example conv3d_benchmark
+cargo run --example quick_bench     # Quick performance comparison
+cargo run --example naive_demo      # Naive convolution examples
+cargo run --example imagenet_bench  # Scaled ImageNet benchmarks
+cargo run --example conv3d_benchmark # 3D convolution benchmarks
 
 # Run with CUDA support (requires NVIDIA GPU and CUDA toolkit)
 cargo build --release --features cuda
@@ -111,6 +126,7 @@ cargo build --release --features cuda
 
 The library is designed with modularity in mind:
 
+- `naive.rs`: Direct/naive convolution implementations for reference and correctness
 - `im2col.rs`: 2D image-to-column transformations
 - `gemm.rs`: Matrix multiplication with CUDA/CPU backends
 - `fft_conv.rs`: FFT-based convolution using rustfft
